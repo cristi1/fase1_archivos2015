@@ -6,6 +6,7 @@
                    projectFiles="true">
       <itemPath>menu_201114717.h</itemPath>
       <itemPath>plantilla1_201114717.h</itemPath>
+      <itemPath>plantilla2_201114717.h</itemPath>
       <itemPath>plantilla4_201114717.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
@@ -18,6 +19,7 @@
       <itemPath>main.c</itemPath>
       <itemPath>menu_201114717.c</itemPath>
       <itemPath>plantilla1_201114717.c</itemPath>
+      <itemPath>plantilla2_201114717.c</itemPath>
       <itemPath>plantilla4_201114717.c</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
@@ -51,6 +53,10 @@
       <item path="plantilla1_201114717.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="plantilla1_201114717.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="plantilla2_201114717.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="plantilla2_201114717.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="plantilla4_201114717.c" ex="false" tool="0" flavor2="0">
       </item>
@@ -86,6 +92,10 @@
       <item path="plantilla1_201114717.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="plantilla1_201114717.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="plantilla2_201114717.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="plantilla2_201114717.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="plantilla4_201114717.c" ex="false" tool="0" flavor2="0">
       </item>

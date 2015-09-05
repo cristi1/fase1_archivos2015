@@ -1,0 +1,5 @@
+digraph G {node[shape=box, style=filled, color=Gray95]; edge[color=blue]; rankdir=LR
+subgraph cluster0 {color=lightgrey;  node [color=white]; 
+disco1_1Mb_0particiones;}
+
+}

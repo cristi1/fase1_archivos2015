@@ -9,7 +9,6 @@
 //char ubic_general[110],ubi_index[100];
 //home//clnx//Escritorio//pp a1//
 
-
 void inicio(){
     DIR *carpeta;
     char disco[100];
@@ -41,7 +40,8 @@ void crearDisco(){
     FILE *index;
     FILE *nuevoDisco;
     char nom[32],dirNuevo[145];
-    int tam,tm,posf,d,l;
+    int tm,posf,d,l; //tam
+    float tam;
     printf("Nombre disco: ");
     getchar();
     fflush(stdin);
@@ -52,13 +52,14 @@ void crearDisco(){
     tm=strlen(nom);
     if(tm<32){
         printf("Tamaño disco en Mb: ");
-        scanf("%i",&tam);
+        scanf("%f",&tam);
         if(tam>0){
             index=fopen(ubi_index,"rb+");
             if(index!=NULL){
                 fseek(index,0,SEEK_END);
                 posf=ftell(index);
                 d=(posf/sizeof(disco));
+                //memset(aux.id,0,3);
                 strcpy(aux.id,"");
                 strcat(aux.id,"vd");
                 aux.id[2]=97+d;
@@ -79,7 +80,7 @@ void crearDisco(){
                     nuevoMBR.cantPart=0;
                     fwrite(&nuevoMBR,sizeof(mbr),1,nuevoDisco);
                     int k;
-                    for(k=0;k<((tam*1024*1024)-1000);k++){
+                    for(k=0;k<((tam*1024*1024)-sizeof(mbr));k++){
                     byte c;
                     fwrite(&c,sizeof(byte),1,nuevoDisco); 
                     }

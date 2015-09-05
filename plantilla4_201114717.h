@@ -12,7 +12,7 @@
 extern "C" {
 #endif
     void archDiscos();
-
+    char* existe(char *id);
 
 
 #ifdef	__cplusplus

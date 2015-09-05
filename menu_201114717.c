@@ -93,6 +93,19 @@ void menu2(){
     printf("2. Eliminar Particion\n");
     printf("3. Formatear Particion\n");
     scanf(" %d",&n);
+    verificar2(n);
+}
+
+void verificar2(int n){
+    switch(n){
+        case 1:
+            crearParticion();
+            sleep(2);
+            menu2();
+            break;
+        default:
+            menu0();
+    }
 }
 
 void menu3(){
