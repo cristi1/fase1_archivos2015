@@ -100,7 +100,7 @@ void verificar2(int n){
     switch(n){
         case 1:
             crearParticion();
-            sleep(2);
+            //sleep(1);
             menu2();
             break;
         default:

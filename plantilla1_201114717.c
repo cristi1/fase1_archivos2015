@@ -64,11 +64,11 @@ void crearDisco(){
                 strcat(aux.id,"vd");
                 aux.id[2]=97+d;
                 strcpy(aux.nombre,nom);
-                aux.tam=tam;
+                aux.tam=(tam*1024*1024);
                 aux.prtPrim=0;
                 aux.prtExt=0;
                 aux.prtLog=0;
-                aux.spLibre=tam;
+                aux.spLibre=(tam*1024*1024);
                 aux.estado=1;
                 fwrite(&aux,sizeof(disco),1,index);
                 fclose(index);
@@ -76,7 +76,7 @@ void crearDisco(){
                 if(nuevoDisco!=NULL){
                     mbr nuevoMBR;
                     strcpy(nuevoMBR.nombre,nom);
-                    nuevoMBR.tam=tam;
+                    nuevoMBR.tam=(tam*1024*1024);
                     nuevoMBR.cantPart=0;
                     fwrite(&nuevoMBR,sizeof(mbr),1,nuevoDisco);
                     int k;
@@ -103,7 +103,8 @@ void crearDisco(){
 
 void aumentarTamDisco(){
     char id[3],actual[40],dir[150];
-    int tam,vacio,byte_act; 
+    int vacio,byte_act; 
+    float tam;
     FILE *aux,*index;
     disco aux1;
     printf("ID del disco: ");
@@ -133,7 +134,7 @@ void aumentarTamDisco(){
                     strcat(dir,actual);
                     strcat(dir,".vd");
                     printf("Mb a aumentar en el disco: ");
-                    scanf("%i",&tam);
+                    scanf("%f",&tam);
                     if(tam>0){
                         aux=fopen(dir,"rb+");
                         if(aux!=NULL){
@@ -145,10 +146,10 @@ void aumentarTamDisco(){
                             }
                             fclose(aux);
                             fseek(index,byte_act,SEEK_SET);
-                            aux1.tam=aux1.tam+tam;
-                            aux1.spLibre=aux1.spLibre+tam;
+                            aux1.tam=aux1.tam+(tam*1024*1024); //tamaño aumento en bytes
+                            aux1.spLibre=aux1.spLibre+(tam*1024*1024); //espacio en bytes libre aumentado
                             fwrite(&aux1,sizeof(disco),1,index);
-                            printf("se han aumentado %i Mb al disco %s.vd !!\n",tam,aux1.nombre);
+                            printf("se han aumentado %f Mb al disco %s.vd !!\n",tam,aux1.nombre);
                         }
                     }else{
                         printf("el tamaño debe ser mayor a 0!\n");
@@ -166,7 +167,8 @@ void aumentarTamDisco(){
 
 void reducirTamDisco(){
     char id[3],actual[40],dir[150];
-    int tam,vacio,sinPart,byte_act,reducir; 
+    int vacio,sinPart,byte_act,reducir; 
+    float tam;
     FILE *aux,*index;
     disco aux1;
     printf("ID del disco: ");
@@ -197,7 +199,7 @@ void reducirTamDisco(){
                     strcat(dir,actual);
                     strcat(dir,".vd");
                     printf("Mb a reducir en el disco: ");
-                    scanf("%i",&tam);
+                    scanf("%f",&tam);
                     if(tam>0 && tam<=sinPart){
                         aux=fopen(dir,"rb+");
                         if(aux!=NULL){
@@ -205,10 +207,10 @@ void reducirTamDisco(){
                             truncate(dir,reducir*1024*1024);
                             fclose(aux);
                             fseek(index,byte_act,SEEK_SET);
-                            aux1.tam=aux1.tam-tam;
-                            aux1.spLibre=aux1.spLibre-tam;
+                            aux1.tam=aux1.tam-(tam*1024*1024);
+                            aux1.spLibre=aux1.spLibre-(tam*1024*1024);
                             fwrite(&aux1,sizeof(disco),1,index);
-                            printf("se redujeron %i Mb al disco %s.vd !!\n",tam,aux1.nombre);
+                            printf("se redujeron %f Mb al disco %s.vd !!\n",tam,aux1.nombre);
                         }else{
                             printf("no se ha podido acceder al disco!");
                         }

@@ -30,10 +30,11 @@ extern "C" {
     }bloque;
     
 //--------------------------------METODOS---------------------------------------
-    disco existeDisco(char id[]);
+    disco existeDiscoIndex(char id[]);
     void crearParticion();
     mbr obtenerMBR(char nombreDisco[]);
-    mbr actualizarMBR(char nombreDisco[]);
+    void actualizarDiscoIndex(disco aux1);
+    void EliminarParticion();
             
 #ifdef	__cplusplus
 }

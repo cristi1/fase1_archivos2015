@@ -14,7 +14,7 @@
 void main(int argc, char** argv) {
     //printf("\n***** PROYECTO FASE 1 MENEJO E IMPLEMENTACION DE ARCHIVOS *****\n \n");
     //printf("tamaño %i\n",sizeof(fatRootFolder));
-    //printf("tamaño %i\n",sizeof(disco));
+    //printf("tamaño %i\n",sizeof(mbr));
     inicio();
 }
 

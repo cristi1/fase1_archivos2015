@@ -18,13 +18,13 @@ extern "C" {
     
     typedef struct{//para archivos de discos
         //int tam; //tamaño de disco en MB
-        float tam;
+        float tam; //tamaño de disco en Bytes
         char nombre[32]; //nombre del disco
         int prtPrim; //No. particiones primarias
         int prtExt; //No. particiones extendidas
         int prtLog; //No. particiones logicas
         //int spLibre; //espacio libre en MB (sin particionar)
-        float spLibre; 
+        float spLibre; //espacio libre en Bytes(sin particionar)
         int estado; //1 existe 0 eliminado
         char id[3]; 
     }disco;
@@ -37,13 +37,13 @@ extern "C" {
         int cantBloqLib; //cantidad de bloques libres
         int tipoPart; //tipo de particion 1=primaria, 2=extendida, 3=logica
         int tipoAjuste; //tipo de ajuste 1=primer ajuste, 2=mejor ajuste, 3=peor ajuste
-        int tam; //tamaño de la particion
+        float tam; //tamaño de la particion kb
         int tamBloq; //tamaño del bloque
     }infoPart;
     
     typedef struct{
         char nombre[32]; //nombre del disco
-        int tam; //tamaño del disco
+        float tam; //tamaño del disco en bytes
         int cantPart; //numero de particiones creadas
         infoPart iPart[16]; //tabla de info de 16 particiones maximo 1 extendida por disco y 12 logicas por extendida
     }mbr;

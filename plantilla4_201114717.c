@@ -32,7 +32,7 @@ void archDiscos(){
             fwrite(aux.nombre,strlen(aux.nombre),1,csv);
             fwrite(",",1,1,csv);
             strcpy(stam,"");
-            sprintf(stam,"%.2f",aux.tam);
+            sprintf(stam,"%.2f",(aux.tam/(1024*1024)));
             fwrite(stam,strlen(stam),1,csv);
             fwrite(",",1,1,csv);
             strcpy(sprim,"");
@@ -48,7 +48,7 @@ void archDiscos(){
             fwrite(slog,strlen(slog),1,csv);
             fwrite(",",1,1,csv);
             strcpy(slib,"");
-            sprintf(slib,"%.2f",aux.spLibre);
+            sprintf(slib,"%.2f",(aux.spLibre/(1024*1024)));
             fwrite(slib,strlen(slib),1,csv);
             fwrite(",",1,1,csv);
             sprintf(sest,"%d",aux.estado);
@@ -66,7 +66,7 @@ void archDiscos(){
 
 void mbrDisco(){
     FILE *fichero,*disco_act,*index;
-    char dir_mbr[120],grafica[120],*estado,*parti,*ajus,*nombre,dir[150],id[3],dot[300];
+    char dir_mbr[120],grafica[120],estado[10],parti[9],ajus[15],nombre[32],dir[150],id[3],dot[300];
     int vacio;
     disco aux;
     mbr miMBR;
@@ -100,12 +100,12 @@ void mbrDisco(){
                     fclose(disco_act);
                     fichero = fopen("estructura.dot", "w" ); //dir_mbr
                     if(fichero!=NULL){
-                        fprintf(fichero, "digraph G {node[shape=box, style=filled, color=Gray95]; edge[color=blue]; rankdir=LR\n" );
+                        fprintf(fichero, "digraph G {node[ shape=box, style=filled,color=Gray95]; edge[color=blue]; rankdir=LR;\n" );
                         fprintf(fichero, "subgraph cluster0 {color=lightgrey;  node [color=white]; \n");
-                        fprintf(fichero,"%s_%iMb_%iparticiones;}\n",miMBR.nombre,miMBR.tam,miMBR.cantPart);
+                        fprintf(fichero,"server0[label=\"%s, %.1f Mb, %i particiones\"];\n",miMBR.nombre,(miMBR.tam/(1024*1024)),miMBR.cantPart);
                         if(miMBR.cantPart>0){
                             int k;
-                            for(k=0;k<=miMBR.cantPart;k++){
+                            for(k=0;k<miMBR.cantPart;k++){
                                 fprintf(fichero, "subgraph cluster%i {color=lightgrey;  node [color=white];\n",k+1);
                                 strcpy(estado,"");
                                 strcpy(parti,"");
@@ -141,11 +141,10 @@ void mbrDisco(){
                                     default:
                                         strcat(ajus,"error");
                                 }
-                                fprintf(fichero,"%sParticion _%iinicia_en_%i_%ibloques_%ibloques_libres_%s_%s_%i\n",estado,k+1,miMBR.iPart[k].byteInicio,miMBR.iPart[k].cantBloques,miMBR.iPart[k].cantBloqLib,parti,ajus,miMBR.iPart[k].tam);
-                                fprintf(fichero, ";\n}");
+                                fprintf(fichero,"server%i[label=\"%s, %s, inicia en %i, %i bloques, %i bloques libres, %s, %s, %.1f Kb\"];}\n",k+1,estado,miMBR.iPart[k].nombre,miMBR.iPart[k].byteInicio,miMBR.iPart[k].cantBloques,miMBR.iPart[k].cantBloqLib,parti,ajus,(miMBR.iPart[k].tam/(1024)));
                             }
                         }
-                        fprintf(fichero, "\n}");
+                        fprintf(fichero, "\n}}");
                         fprintf( stdout, "Datos escritos en el archivo: %s\n",dir_mbr);
                         if( !fclose(fichero) ){
                         fflush(stdin);
