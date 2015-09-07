@@ -108,7 +108,7 @@ void crearParticion(){
                     frf.estado=-1; //bloque no usado o no inicializado
                     fwrite(&frf,sizeof(fatRootFolder),1,discoActual);
                 }
-                for(j=0;j<n;j++){
+                for(j=0;j<n;j++){ //escribe bloque contenido
                     bloque bloq;
                     bloq.id=j+1;
                     strcpy(contenido,"");

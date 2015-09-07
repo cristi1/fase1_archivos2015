@@ -171,3 +171,101 @@ void mbrDisco(){
         printf("error no se ha podido buscar el id del disco !!\n");
     }
 }
+
+void reporteParticion(){
+    char id[3],nomPart[32],dir[150],dirFat[150];
+    int vacio,num,bandera,i;
+    disco aux;
+    mbr miMBR;
+    FILE *disco_act,*fat,*rootFolder,*bloques;
+    printf("ID del disco: ");
+    scanf("%s",id);
+    index=fopen(ubi_index,"rb+");
+    if(index!=NULL){
+        fseek(index,0,SEEK_END);
+        vacio=ftell(index);
+        if(vacio>0){
+            fseek(index,0,SEEK_SET);
+            fread(&aux,sizeof(disco),1,index);
+            while(!feof(index) && strcmp(aux.id,id)!=0){
+                fread(&aux,sizeof(disco),1,index);
+            }
+            fflush(stdin);
+            if(strcmp(aux.id,id)==0 && aux.estado==1){
+                strcpy(dir,"");
+                strcat(dir,ubic_general);
+                strcat(dir,aux.nombre);
+                strcat(dir,".vd");
+                disco_act=fopen(dir,"rb+");
+                if(disco_act!=NULL){
+                    fread(&miMBR,sizeof(mbr),1,disco_act);
+                    printf("Nombre de la particion: ");
+                    getchar();
+                    fflush(stdin);
+                    scanf("%[^\n]",nomPart);
+                    num=miMBR.cantPart;
+                    bandera=-1;
+                    while(num>0){
+                        if(miMBR.iPart[num-1].estado==1 && strcmp(miMBR.iPart[num-1].nombre,nomPart)==0){
+                            bandera=num-1;
+                            num=1;
+                        }
+                        num--;
+                    }
+                    if(bandera!=-1){
+                        fseek(disco_act,miMBR.iPart[bandera].byteInicio,SEEK_SET);
+                        strcpy(dirFat,"");
+                        strcat(dirFat,ubic_general);
+                        strcat(dirFat,aux.nombre);
+                        strcat(dirFat,".csv");
+                        fat=fopen(dirFat,"wt");
+                        for(i=0;i<miMBR.iPart[bandera].cantBloques;i++){   
+                            
+                        }
+                    }else{
+                        printf("particion %s no encontrada verifique !!\n",nomPart);
+                    }
+                    fclose(disco_act);
+                }else{
+                    printf("error al aperturar disco %s.vd !!\n",aux.nombre);
+                }
+            }else{
+                printf("disco con id %s no encontrado !!\n",id);
+            }
+        }
+    }
+}
+
+void generarBMInodos(){
+    char disco[110];
+    char dir[100];
+    MBR master;
+    SB sup;
+    int iniPart,actPos,posbmii,posbmif;
+    printf("nombre del disco a usar: ");
+    scanf("%s" ,dir);
+    strcpy(disco,"");
+    strcpy(disco,dir);
+    strcat(disco,".disk");
+    FILE *report=fopen("bitmap_inodo.txt","w"); //archivo para bitmap
+    master=particionMontada(disco);
+    iniPart=master.mbr_byte_particion;
+    FILE *archivo=fopen(disco,"rb+");
+    fseek(archivo,iniPart,SEEK_SET);
+    fread(&sup,sizeof(SB),1,archivo);
+    posbmii=sup.sb_bitmap_inodos;
+    posbmif=sup.sb_bitmap_bloqueap;
+    fprintf(report,"\n\t\tREPORTE FAT [Particion %s,Disco %s]  \n",disco);
+    fprintf(report,"--------------------------------------------------------------------------\n");
+    fseek( archivo,posbmii, SEEK_SET );
+	while(posbmii<posbmif)
+            {
+            BIT aux;
+            fread(&aux,sizeof(BIT),1,archivo);
+            fprintf(report,"|%c",aux.bitmap);
+            posbmii++;
+            }
+	fprintf(report,"|");
+	fclose(report);
+        fclose(archivo);
+}
