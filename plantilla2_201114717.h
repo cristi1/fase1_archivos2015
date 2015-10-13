@@ -19,7 +19,7 @@ extern "C" {
         int idInicio; //id del bloque en el que inicia el archivo
         char fecha[20]; //fecha en la que el archivo fue creado
         int idFinal; //id del ultimo bloque del archivo
-        char estado; //1 creado, 0 eliminado
+        char estado; //1 creado, 0 eliminado, 2 disponible
     }fatRootFolder;
     
     typedef struct{
@@ -32,9 +32,34 @@ extern "C" {
 //--------------------------------METODOS---------------------------------------
     disco existeDiscoIndex(char id[]);
     void crearParticion();
-    mbr obtenerMBR(char nombreDisco[]);
     void actualizarDiscoIndex(disco aux1);
     void EliminarParticion();
+    
+    int crearFAT(infoPart particion, char nomDisco[]);
+    int crearENLAZADO(infoPart particion, char nomDisco[]);
+    int crearEXT3(infoPart particion, char nomDisco[]);
+    mbr recuperarMBR(char nom[]);
+    infoPart buscarInfoPart(mbr datosDisco,char nomPart[]);
+    void FormatearParticion();
+    void ActualizarMBR(char nomDisco[],mbr actual,infoPart act);
+    
+                        /*while(i<cantidad && limite<particion.cantBloques){
+                        byte temp;
+                        fread(&temp,sizeof(byte),1,discoActual);
+                        if(temp.a=='0'){
+                            if(i==cantidad-1){
+                                i=cantidad;
+                            }else{
+                                i++;
+                            }
+                        }else{
+                            i=0;
+                        }
+                        limite++;
+                    }
+                    if(i==cantidad){
+                        inicio=limite-cantidad; 
+                    }*/
             
 #ifdef	__cplusplus
 }

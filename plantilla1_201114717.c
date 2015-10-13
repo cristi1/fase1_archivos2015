@@ -210,6 +210,7 @@ void reducirTamDisco(){
                             aux1.tam=aux1.tam-(tam*1024*1024);
                             aux1.spLibre=aux1.spLibre-(tam*1024*1024);
                             fwrite(&aux1,sizeof(disco),1,index);
+                            fclose(aux);
                             printf("se redujeron %f Mb al disco %s.vd !!\n",tam,aux1.nombre);
                         }else{
                             printf("no se ha podido acceder al disco!");

@@ -100,9 +100,13 @@ void verificar2(int n){
     switch(n){
         case 1:
             crearParticion();
-            //sleep(1);
+            sleep(1);
             menu2();
             break;
+        case 3:
+            FormatearParticion();
+            sleep(2);
+            menu2();
         default:
             menu0();
     }
@@ -115,10 +119,39 @@ void menu3(){
     printf("\n******* PROYECTO FASE 1 MENEJO E IMPLEMENTACION DE ARCHIVOS ******* \n");
     printf("\n0. Menu Principal\n");
     printf("1. Crear Archivo\n");
-    printf("2. Modificar Archivo\n");
-    printf("3. Eliminar Archivo\n");
+    printf("2. Modificar Archivo\n"); //leer archivos sistema de archivos enlazado
+    printf("3. Eliminar Archivo\n"); //borrar archivos sistema de archivos enlazado
     printf("4. Renombrar Archivo\n");
     scanf(" %d",&n);
+    verificar3(n);
+}
+
+void verificar3(int n){
+    switch(n){
+        case 1:
+            crearArchivo();
+            sleep(2);
+            menu3();
+            break;
+        case 2:
+            modificarArchivo();
+            sleep(2);
+            menu3();
+            break;
+        case 3:
+            eliminarArchivo();
+            sleep(2);
+            menu3();
+            break;
+        case 4:
+            printf("renombrar Archivo\n");
+            //eliminarModificarArchivo(1);
+            sleep(2);
+            menu3();
+            break;    
+        default:
+            menu0();
+    }
 }
 
 void menu4(){
@@ -146,6 +179,17 @@ void verificar4(int n){
             mbrDisco();
             sleep(2);
             menu4();
+            break;
+        case 3:
+            reporteParticion();
+            sleep(2);
+            menu4();
+            break;
+        /*case 4:
+            reportePartDisco();
+            sleep(2);
+            menu4();
+            break;*/
         default:
             menu0();
     }

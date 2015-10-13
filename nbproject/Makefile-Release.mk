@@ -39,6 +39,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/menu_201114717.o \
 	${OBJECTDIR}/plantilla1_201114717.o \
 	${OBJECTDIR}/plantilla2_201114717.o \
+	${OBJECTDIR}/plantilla3_201114717.o \
 	${OBJECTDIR}/plantilla4_201114717.o
 
 
@@ -85,6 +86,11 @@ ${OBJECTDIR}/plantilla2_201114717.o: plantilla2_201114717.c
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.c) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/plantilla2_201114717.o plantilla2_201114717.c
+
+${OBJECTDIR}/plantilla3_201114717.o: plantilla3_201114717.c 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.c) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/plantilla3_201114717.o plantilla3_201114717.c
 
 ${OBJECTDIR}/plantilla4_201114717.o: plantilla4_201114717.c 
 	${MKDIR} -p ${OBJECTDIR}

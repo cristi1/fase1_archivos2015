@@ -1,7 +1,7 @@
 digraph G {node[ shape=box, style=filled,color=Gray95]; edge[color=blue]; rankdir=LR;
 subgraph cluster0 {color=lightgrey;  node [color=white]; 
-server0[label="discoC, 2.0 Mb, 1 particiones"];
+server0[label="disco2, 2.0 Mb, 1 particiones"];
 subgraph cluster1 {color=lightgrey;  node [color=white];
-server1[label="activa, ubuntu, inicia en 1064, 7818 bloques, 7818 bloques libres, primaria, mejor ajuste, 1000.0 Kb"];}
+server1[label="activa, ubuntu, inicia en 1128, -1 bloques, -1 bloques libres, primaria, primer ajuste, 250.0 Kb, Enlazado"];}
 
 }}

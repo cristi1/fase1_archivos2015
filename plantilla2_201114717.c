@@ -9,7 +9,7 @@ int byteIndAct=0;
 
 void crearParticion(){
     char id[3],nomPart[32],dir[145];
-    int tm,tipoPart,tipoAjust,n,x,i,totPart,tamInfo;
+    int tm,tipoPart,tipoAjust,n,x,i,totPart,tamInfo,tipSisArch;
     float tamPart,tamBloq;
     printf("ID del disco donde se creara la Particion: ");
     scanf("%s",id);
@@ -22,7 +22,7 @@ void crearParticion(){
         strcat(dir,temp.nombre);
         strcat(dir,".vd");
         totPart=temp.prtPrim+temp.prtExt+temp.prtLog;
-        printf("espacio libre %f  #particiones %i\n",temp.spLibre,totPart);
+        printf(" espacio libre %.0f bytes , No. particiones %i\n",temp.spLibre,totPart);
         if((temp.spLibre/1024)>=32 && totPart<16){ //spLibre dado en Bytes
             discoActual=fopen(dir,"rb+");
             if(discoActual!=NULL){
@@ -33,34 +33,87 @@ void crearParticion(){
                 fflush(stdin);
                 scanf("%[^\n]",nomPart);
                 tm=strlen(nomPart); 
-                }while(tm>32);
+                }while(tm>32);                
                 printf("------- El disco %s.vd dispone de %.0fKb libres -------\n",temp.nombre,(temp.spLibre/1024));
                 do{
-                    printf("Tamaño de la particion en Kb(min 32): ");
+                    printf("Tamaño de la particion en Kb(min 250): ");
                     scanf("%f",&tamPart);
-                }while(tamPart<32 || tamPart>(temp.spLibre/1024));
+                }while(tamPart<250 || tamPart>(temp.spLibre/1024));
                 printf("----- El disco puede manejar 1 particion extendida, 12 logicas y 3 primarias -----\n");
                 printf("El disco contiene las siguientes particiones\n  %i primarias\n  %i extendidas\n  %i logicas\n",temp.prtPrim,temp.prtExt,temp.prtLog);
                 do{
                     printf("Tipo de Particion(1->Primaria, 2->Extendida, 3->Lógica): ");
                     scanf("%i",&tipoPart);
+                    if(tipoPart==3 && temp.prtExt==0){
+                        tipoPart=0;
+                        printf("no se ha creado la particion extendida correspondiente!!\n");
+                    }
                     if((tipoPart==2 && temp.prtExt==1) || (tipoPart==1 && temp.prtPrim==3) || (tipoPart==3 && temp.prtLog==12)){
                         printf("error verifique el tipo de particion !!\n");
                         tipoPart=0;
                     }
-                }while(tipoPart<1 || tipoPart>3 );
-                do{
-                    printf("Tipo de Ajuste(1->Primer, 2->Mejor, 3->Peor): ");
-                    scanf("%i",&tipoAjust);
-                }while(tipoAjust<1 || tipoAjust>3);
-                do{
-                    printf("Tamaño del bloque en bytes(min 128): ");
-                    scanf("%f",&tamBloq);
-                }while(tamBloq<128);
-                tamInfo=tamBloq-sizeof(bloque);
-                char contenido[tamInfo];
-                //---------------SE CREARA LA PARTCICION------------------------
-                n=(((tamPart*1024)-(sizeof(fatRootFolder)*256))/(1+tamBloq));
+                }while(tipoPart<1 || tipoPart>3);
+                x=mbrDisco.cantPart;
+                i=sizeof(mbr);
+                while(x>0){
+                    if(mbrDisco.iPart[x-1].estado==1){
+                        i=i+(mbrDisco.iPart[x-1].tam);
+                    }
+                    x=x-1;
+                }
+                x=mbrDisco.cantPart;
+                if(tipoPart!=2){
+                    do{
+                        printf("Tipo de Ajuste(1->Primer, 2->Mejor, 3->Peor): ");
+                        scanf("%i",&tipoAjust);
+                    }while(tipoAjust<1 || tipoAjust>3);
+                    do{
+                        printf("Tamaño del bloque en bytes(min 64): ");
+                        scanf("%f",&tamBloq);
+                    }while(tamBloq<64);
+                    //tamInfo=tamBloq-sizeof(bloque);
+                    //char contenido[tamInfo];
+                    //n=(((tamPart*1024)-(sizeof(fatRootFolder)*256))/(1+tamBloq));
+                    //---------------SE CREARA LA PARTCICION------------------------
+                    //mbrDisco.iPart[x].cantBloqLib=n;
+                    //mbrDisco.iPart[x].cantBloques=n;
+                    mbrDisco.iPart[x].tamBloq=tamBloq; 
+                    mbrDisco.iPart[x].tipoAjuste=tipoAjust;
+                    //------------------------particionar---------------------------
+                    /*fseek(discoActual,i,SEEK_SET);
+                    int j;
+                    for(j=0;j<n;j++){ //escribe FAT
+                        byte fat;
+                        fat.a='0'; //0 indica bloq libre 1 bloque ocupado
+                        fputc(fat.a,discoActual);
+                    }
+                    for(j=0;j<256;j++){ //escribe FAT root folder
+                        fatRootFolder frf;
+                        frf.estado='2'; //bloque no usado o no inicializado
+                        strcpy(frf.extension,"");
+                        strcpy(frf.fecha,"dd/mm/aaaa-hh:mm");
+                        strcpy(frf.nombre,"");
+                        frf.idInicio=-1;
+                        frf.idFinal=-1;
+                        frf.tamanio=0;
+                        fwrite(&frf,sizeof(fatRootFolder),1,discoActual);
+                    }
+                    for(j=0;j<n;j++){ //escribe bloque contenido
+                        bloque bloq;
+                        bloq.id=j;
+                        bloq.anterior=-1;
+                        bloq.siguiente=-1;
+                        bloq.estado='0';
+                        strcpy(contenido,"");
+                        fwrite(&bloq,sizeof(bloque),1,discoActual);
+                        fwrite(contenido,sizeof(contenido),1,discoActual);
+                    }*/
+                }else{
+                    mbrDisco.iPart[x].tamBloq=-1; //no aplica part Extendida
+                    mbrDisco.iPart[x].tipoAjuste=-1; //no aplica part Extendida
+                }
+                mbrDisco.iPart[x].cantBloqLib=-1; //no aplica part Extendida y usado por FAT y ENLAZADO
+                mbrDisco.iPart[x].cantBloques=-1; //no aplica part Extendida y usado por FAT y ENLAZADO
                 switch(tipoPart){
                     case 1:
                         temp.prtPrim=temp.prtPrim+1;
@@ -73,48 +126,16 @@ void crearParticion(){
                 }
                 temp.spLibre=temp.spLibre-(tamPart*1024);
                 actualizarDiscoIndex(temp); //actualiza index
-                fseek(discoActual,0,SEEK_SET);
-                x=mbrDisco.cantPart;
-                i=sizeof(mbr);
-                while(x>0){
-                    if(mbrDisco.iPart[x-1].estado==1){
-                        i=i+(mbrDisco.iPart[x-1].tam);
-                    }
-                    x=x-1;
-                }
-                x=mbrDisco.cantPart;
                 mbrDisco.iPart[x].byteInicio=i;
-                mbrDisco.iPart[x].cantBloqLib=n;
-                mbrDisco.iPart[x].cantBloques=n;
                 mbrDisco.iPart[x].estado=1;
                 strcpy(mbrDisco.iPart[x].nombre,"");
                 strcat(mbrDisco.iPart[x].nombre,nomPart);
-                mbrDisco.iPart[x].tam=tamPart*1024;
-                mbrDisco.iPart[x].tamBloq=tamBloq;
-                mbrDisco.iPart[x].tipoAjuste=tipoAjust;
+                mbrDisco.iPart[x].tam=tamPart*1024; // en bytes
                 mbrDisco.iPart[x].tipoPart=tipoPart;
+                mbrDisco.iPart[x].sisArchivos=-1; //sin sistema de archivos ya que no ha sido formateada
                 mbrDisco.cantPart=mbrDisco.cantPart+1;
+                fseek(discoActual,0,SEEK_SET);
                 fwrite(&mbrDisco,sizeof(mbr),1,discoActual); //actualiza mbr
-                //------------------------particionar---------------------------
-                fseek(discoActual,i,SEEK_SET);
-                int j;
-                for(j=0;j<n;j++){ //escribe FAT
-                    byte fat;
-                    fat.a='0'; //0 indica bloq libre 1 bloque equivocado
-                    fwrite(&fat,sizeof(byte),1,discoActual);
-                }
-                for(j=0;j<256;j++){ //escribe FAT root folder
-                    fatRootFolder frf;
-                    frf.estado=-1; //bloque no usado o no inicializado
-                    fwrite(&frf,sizeof(fatRootFolder),1,discoActual);
-                }
-                for(j=0;j<n;j++){ //escribe bloque contenido
-                    bloque bloq;
-                    bloq.id=j+1;
-                    strcpy(contenido,"");
-                    fwrite(&bloq,sizeof(bloque),1,discoActual);
-                    fwrite(contenido,sizeof(contenido),1,discoActual);
-                }
                 fclose(discoActual);
             }else{
                 printf("error al intentar acceder al disco %s.vd  !!\n",temp.nombre);
@@ -128,8 +149,337 @@ void crearParticion(){
 }
 
 void EliminarParticion(){
-    
+    char id[3],dir[145],nomPart[32],diraux[145],dirAux[150];
+    int bandera,i,ini,fin;
+    disco temp;
+    mbr mbrDisco;
+    FILE *discoActual,*auxiliar;
+    printf("Id del disco: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        strcpy(dir,ubic_general);
+        strcat(dir,temp.nombre);
+        strcat(dir,".vd");
+        discoActual=fopen(dir,"rb+");
+        if(discoActual!=NULL){
+            fread(&mbrDisco,sizeof(mbr),1,discoActual);
+            printf("Nombre de la particion a eliminar: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",nomPart);
+            bandera=-1;
+            for(i=0;i<mbrDisco.cantPart;i++){
+                if((strcmp(mbrDisco.iPart[i-1].nombre,nomPart)==0) && (mbrDisco.iPart[i-1].estado==1)){
+                    bandera=i-1;
+                    i=mbrDisco.cantPart;
+                }
+            }
+            if(bandera!=-1){  //pendiente
+               /* mbrDisco.iPart[bandera].estado=0;
+                ini=mbrDisco.iPart[bandera].byteInicio;
+                fin=mbrDisco.iPart[bandera].byteInicio+mbrDisco.iPart[bandera].tam;
+                strcpy(dir,ubic_general);
+                strcat(dir,"auxTempo.vd");
+                auxiliar=fopen(dir,"wb+");
+                size_t sz = mbrDisco.iPart[bandera].byteInicio;                         // 100,000 bytes
+                char *buff = malloc (sz); 
+                sz = fread (buff, 1, sz, fin);              // should check for errors
+                
+                FILE *finp = fopen ("inp.txt", "rb");       // should check for NULLs
+FILE *fout = fopen ("out.txt", "wb");
+size_t sz = 100000;                         // 100,000 bytes
+char *buff = malloc (sz);                   // should check for NULL
+sz = fread (buff, 1, sz, fin);              // should check for errors
+fwrite (buff, 1, sz, fout);
+free (buff);
+fclose (fin);
+fclose (fout);
+rename ("out.txt", "inp.txt);               // should check for error*/
+            }
+        }else{
+            printf("error intentar abrir el disco %s.vd !!\n",temp.nombre);
+        }
+    }else{
+        printf("error id %s no encontrado !!\n",id);
+    }
 }
+
+int crearFAT(infoPart particion, char nomDisco[]){ //retorna numero de bloques creados
+    char dir[145];
+    int j,n,tamInfo;
+    FILE *discoActual;
+    n=0;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,particion.byteInicio,SEEK_SET);
+        n=(((particion.tam*1024)-(sizeof(fatRootFolder)*256))/(1+particion.tamBloq));
+        tamInfo=particion.tamBloq-sizeof(bloque);
+        char contenido[tamInfo];
+        for(j=0;j<n;j++){ //escribe FAT
+            byte fat;
+            fat.a='0'; //0 indica bloq libre 1 bloque ocupado
+            fputc(fat.a,discoActual);
+        }
+        for(j=0;j<256;j++){ //escribe FAT root folder
+            fatRootFolder frf;
+            frf.estado='2'; //bloque no usado o no inicializado
+            strcpy(frf.extension,"");
+            strcpy(frf.fecha,"dd/mm/aaaa-hh:mm");
+            strcpy(frf.nombre,"");
+            frf.idInicio=-1;
+            frf.idFinal=-1;
+            frf.tamanio=0;
+            fwrite(&frf,sizeof(fatRootFolder),1,discoActual);
+        }
+        for(j=0;j<n;j++){ //escribe bloque contenido
+            bloque bloq;
+            bloq.id=j;
+            bloq.anterior=-1;
+            bloq.siguiente=-1;
+            bloq.estado='0';
+            strcpy(contenido,"");
+            fwrite(&bloq,sizeof(bloque),1,discoActual);
+            fwrite(contenido,sizeof(contenido),1,discoActual);
+        }
+        fclose(discoActual);
+    }else{
+        printf("error al intentar aperturar en disco %s.vd",nomDisco);
+    }
+    return n;
+}
+
+int crearENLAZADO(infoPart particion, char nomDisco[]){ //retorna numero de bloques creados
+    char dir[145];
+    int n,i;
+    n=0;
+    directorio dr;
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        n=((particion.tam*1024)-sizeof(directorio))/sizeof(bloqEnl);
+        fseek(discoActual,particion.byteInicio,SEEK_SET);
+        dr.inicio=0;
+        dr.fin=n-1;
+        strcpy(dr.nombre,"");
+        fwrite(&dr,sizeof(directorio),1,discoActual);
+        for(i=0;i<n;i++){
+            bloqEnl nuevo;
+            nuevo.id=i;
+            nuevo.sig=-1;
+            strcpy(nuevo.contenido,"");
+            fwrite(&nuevo,sizeof(bloqEnl),1,discoActual);
+        }
+        fclose(discoActual);
+    }else{
+        printf("error al aperturar disco %s.vd\n",nomDisco);
+    }
+    return n;
+}
+
+int crearEXT3(infoPart particion, char nomDisco[]){ //retorna numero de bloques ##creados para archivos
+    int n;
+    n=0;
+    return n;
+}
+
+mbr recuperarMBR(char nom[]){ //devuelve el mbr del disco con nombre-->nom
+    char dir[145];
+    FILE *discoActual;
+    mbr mbrDisco;
+    mbrDisco.cantPart=-1; //para verificar si encontro la particion
+    strcpy(dir,ubic_general);
+    strcat(dir,nom);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fread(&mbrDisco,sizeof(mbr),1,discoActual);
+        fclose(discoActual);
+    }else{
+        printf("error al intentar aperturar el disco %s.vd \n",nom);
+    }
+    return mbrDisco;
+}
+
+infoPart buscarInfoPart(mbr datosDisco,char nomPart[]){
+    int cant,i;
+    infoPart encontrado;
+    strcpy(encontrado.nombre,"");
+    cant=datosDisco.cantPart;
+    i=0;
+    while(i<cant && strcmp(datosDisco.iPart[i].nombre,nomPart)!=0){
+        i++;
+    }
+    if(strcmp(datosDisco.iPart[i].nombre,nomPart)==0){
+        encontrado=datosDisco.iPart[i];
+    }else{
+        printf("particion %s no encontrada !!",nomPart);
+    }
+    return encontrado;
+}
+
+void ActualizarMBR(char nomDisco[],mbr actual,infoPart act){
+    char dir[145];
+    int cant,i;
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    i=0;
+    cant=actual.cantPart;
+    while(i<cant && strcmp(actual.iPart[i].nombre,act.nombre)!=0){
+        i++;
+    }
+    if(strcmp(actual.iPart[i].nombre,act.nombre)==0){
+        actual.iPart[i].sisArchivos=act.sisArchivos;
+        actual.iPart[i].cantBloqLib=act.cantBloqLib;
+        actual.iPart[i].cantBloques=act.cantBloques;
+    }
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fwrite(&actual,sizeof(mbr),1,discoActual);
+        fclose(discoActual);
+    }else{
+        printf("error al intentar aperturar el disco %s.vd \n",nomDisco);
+    }
+}
+
+void FormatearParticion(){
+    char id[3],nomPart[32];
+    int tipSisArch,n,bandera;
+    disco temp;
+    mbr mbrDisco;
+    infoPart particion;
+    bandera=1;
+    n=0;
+    printf("ID del disco donde se encuentra la Particion: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    printf("disco recuperado: %s\n",temp.id);
+    if(strcmp(temp.id,id)==0){
+        mbrDisco=recuperarMBR(temp.nombre);
+        if(mbrDisco.cantPart>0){
+            printf("Nombre de la particion a formatear: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",nomPart);
+            particion=buscarInfoPart(mbrDisco,nomPart);
+            if(strcmp(particion.nombre,nomPart)==0){
+                do{
+                    printf("Sistema de Archivos \n 1. FAT \n 2. ENLAZADO \n 3. EXT3\n ");
+                    scanf("%i",&tipSisArch);
+                }while(tipSisArch<1 || tipSisArch>3);
+                if(particion.tipoPart!=2 && particion.estado==1){
+                    if(tipSisArch==1 && particion.tamBloq>127){ //FAT
+                        n=crearFAT(particion,temp.nombre);
+                        particion.sisArchivos=1;
+                    }else if(tipSisArch==2 && particion.tamBloq==100){ //ENLAZADA
+                        n=crearENLAZADO(particion,temp.nombre);
+                        particion.sisArchivos=2;
+                    }else if(tipSisArch==3 && particion.tipoAjuste==3 && particion.tamBloq==64){ //EXT3
+                        n=crearEXT3(particion,temp.nombre);
+                        particion.sisArchivos=3;
+                    }else{
+                        printf("no se dado formato ala particion verifique!!\n");
+                        bandera=0;
+                    }
+                    if(bandera!=0){
+                        particion.cantBloqLib=n;
+                        particion.cantBloques=n;
+                        ActualizarMBR(temp.nombre,mbrDisco,particion);
+                    }
+                }else{
+                    printf("error esta haciendo referencia a una particion extendida o ha sido eliminada!!\n");
+                }
+            }
+        }
+    }
+}
+
+/*void FormatearParticion(){
+    char id[3],nomPart[32],dir[145];
+    int i,bandera,tipoFor;
+    FILE *discoActual;
+    disco temp;
+    mbr mbrDisco;
+    printf("ID del disco a formatear: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        strcpy(dir,ubic_general);
+        strcat(dir,temp.nombre);
+        strcat(dir,".vd");
+        if(temp.prtPrim>0 || temp.prtLog>0){
+            discoActual=fopen(dir,"rb+");
+            if(discoActual!=NULL){
+                fread(&mbrDisco,sizeof(mbr),1,discoActual);
+                printf("Nombre de la particion a formatear: ");
+                getchar();
+                fflush(stdin);
+                scanf("%[^\n]",nomPart);
+                bandera=-1;
+                for(i=0;i<mbrDisco.cantPart;i++){
+                    if((strcmp(mbrDisco.iPart[i-1].nombre,nomPart)==0) && (mbrDisco.iPart[i-1].estado==1) && (mbrDisco.iPart[i-1].tipoPart!=2)){
+                        bandera=i-1;
+                        i=mbrDisco.cantPart;
+                    }
+                }
+                if(bandera!=-1){
+                    do{
+                    printf("Tipo de formateo 1->rapido, 2->completo: ");
+                    scanf("%i",&tipoFor);
+                    }while(tipoFor<1 || tipoFor>2);
+                    fseek(discoActual,mbrDisco.iPart[bandera].byteInicio,SEEK_SET);
+                    for(i=0;i<mbrDisco.iPart[bandera].cantBloques;i++){
+                        byte fat;
+                        fat.a='0'; //0 indica bloq libre 1 bloque ocupado
+                        fputc(fat.a,discoActual);
+                    }
+                    for(i=0;i<256;i++){
+                        fatRootFolder frf;
+                        frf.estado='2'; //bloque no usado o no inicializado
+                        strcpy(frf.extension,"");
+                        strcpy(frf.fecha,"dd/mm/aaaa-hh:mm");
+                        strcpy(frf.nombre,"");
+                        frf.idInicio=-1;
+                        frf.idFinal=-1;
+                        frf.tamanio=0;
+                        fwrite(&frf,sizeof(fatRootFolder),1,discoActual);
+                    }
+                    if(tipoFor==2){ //formateo completo
+                        char contenido[mbrDisco.iPart[bandera].tamBloq-sizeof(bloque)];
+                        for(i=0;i<mbrDisco.iPart[bandera].cantBloques;i++){ //escribe bloque contenido
+                            bloque bloq;
+                            bloq.id=i;
+                            bloq.anterior=-1;
+                            bloq.siguiente=-1;
+                            bloq.estado='0';
+                            strcpy(contenido,"");
+                            fwrite(&bloq,sizeof(bloque),1,discoActual);
+                            fwrite(contenido,sizeof(contenido),1,discoActual);
+                        }
+                    }
+                    printf("formateo terminado!!\n");
+                }else{
+                    printf("posibilidades de error al buscar particion %s:\n ->no existe\n ->eliminada\n ->no apta\n",nomPart);
+                }
+                fclose(discoActual);
+            }else{
+                printf("error al intentar ingresar al disco %s.vd !!\n",temp.nombre);
+            }
+        }else{
+            printf("no existen particiones para formatear !!\n");
+        }
+    }else{
+        printf("error id %s no encontrado !!\n",id);
+    }
+}*/
 
 void actualizarDiscoIndex(disco aux1){
     FILE *index;
@@ -154,8 +504,10 @@ disco existeDiscoIndex(char id[]){ //0 no existe, 1 existe
             fread(&aux1,sizeof(disco),1,index);
         }
         if(strcmp(aux1.id,id)!=0){
-            strcpy(aux1.id,"xxx");
+            strcpy(aux1.id,"");
+            printf("Disco con id--> %s no encontrado!!\n",id);
         }
+        fclose(index);
     }
     return aux1;
 }

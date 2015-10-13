@@ -39,6 +39,7 @@ extern "C" {
         int tipoAjuste; //tipo de ajuste 1=primer ajuste, 2=mejor ajuste, 3=peor ajuste
         float tam; //tamaño de la particion kb
         int tamBloq; //tamaño del bloque
+        int sisArchivos; //sistema de archivos 1.FAT 2.ENLAZADO 3.EXT3
     }infoPart;
     
     typedef struct{
@@ -47,6 +48,18 @@ extern "C" {
         int cantPart; //numero de particiones creadas
         infoPart iPart[16]; //tabla de info de 16 particiones maximo 1 extendida por disco y 12 logicas por extendida
     }mbr;
+    
+    typedef struct{
+        int id;
+        char contenido[100]; //arreglo de caracteres q poseera el bloq
+        int sig; //id de apuntador hacia el siguiente bloq
+    }bloqEnl;
+    
+    typedef struct{
+        int inicio;
+        int fin;
+        char nombre[16];
+    }directorio;
     
 //-------------------------------METODOS----------------------------------------
     void crearDisco();
