@@ -373,13 +373,17 @@ superBloque recuperarSB(infoPart particion,char nomDisco[]){
 
 void actualizarSB(infoPart particion,char nomDisco[],superBloque actual){
     char dir[145];
+    int n;
     FILE *discoActual;
+    n=actual.num_bloq;
     strcpy(dir,ubic_general);
     strcat(dir,nomDisco);
     strcat(dir,".vd");
     discoActual=fopen(dir,"rb+");
     if(discoActual!=NULL){
         fseek(discoActual,particion.byteInicio,SEEK_SET);
+        fwrite(&actual,sizeof(superBloque),1,discoActual);
+        fseek(discoActual,particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo)+n*sizeof(bloquEXT)+100*sizeof(log),SEEK_SET);
         fwrite(&actual,sizeof(superBloque),1,discoActual);
         fclose(discoActual);
     }else{
@@ -479,6 +483,56 @@ void actualizarBloqEXT(superBloque sb,char nomDisco[],bloquEXT bloqAct){
     }
 }
 
+byte getBMInodo(infoPart particion,char nomDisco[],int id){ //obtiene el n bitmap de inodo
+    char dir[145];
+    byte bitmap;
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,particion.byteInicio+sizeof(superBloque)+id,SEEK_SET);
+        fread(&bitmap,sizeof(byte),1,discoActual);//fputc(fat.a,discoActual);
+        fclose(discoActual);
+    }
+    return bitmap;
+}
+
+byte getBMBloqEXT(infoPart particion,char nomDisco[],superBloque sb,int id){ //obtiene el n bitmap de bloquEXT
+    char dir[145];
+    byte bitmap;
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,particion.byteInicio+sizeof(superBloque)+sb.num_inod+id,SEEK_SET);
+        fread(&bitmap,sizeof(byte),1,discoActual);//fputc(fat.a,discoActual);
+        fclose(discoActual);
+    }
+    return bitmap;
+}
+
+log getBitacora(infoPart particion,char nomDisco[],superBloque sb,int id){
+    char dir[145];
+    int n;
+    log bitac;
+    FILE *discoActual;
+    n=sb.num_inod;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.ini_log+id*(sizeof(log)),SEEK_SET);
+        fread(&bitac,sizeof(log),1,discoActual);
+        fclose(discoActual);
+    }
+    return bitac;
+}
+
 void actualizarBitMapInodo(int inicio,char nomDisco[],int id,char val){
     char dir[145];
     FILE *discoActual;
@@ -511,27 +565,29 @@ void actualizarBitMapBloqEXT(int inicio,char nomDisco[],int id,char val,int n){
     }
 }
 
-void actualizarBitacora(){
-    
-}
-
-void divPath(Lista *l,char path[]){
-    char *ptr;
-    ptr = strtok(path,"/");    // Primera llamada => Primer token
-    addLista(l,ptr);
-    while( (ptr=strtok(NULL,"/"))!=NULL){    // Posteriores llamadas
-        addLista(l,ptr);
-    }
-}
-
-char* getFecha(){
+void actualizarBitacora(superBloque sb,char nomDisco[],char cont[],char nom[],int tipOp,int tipo){
+    char dir[145];
+    int i;
+    FILE *discoActual;
+    log nuevo;
     time_t tiempo = time(0);
     struct tm *tlocal = localtime(&tiempo);
     char fecha[16];
-    char *fech;
     strftime(fecha,16,"%d/%m/%y-%H:%M",tlocal);
-    strcpy(fech,fecha);
-    return fech;
+    strcpy(nuevo.contenido,cont);
+    strcpy(nuevo.fech_trans,fecha);
+    strcpy(nuevo.nombre,nom);
+    nuevo.tip_oper=tipOp;
+    nuevo.tipo=tipo;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.ini_bloq_bit,SEEK_SET);
+        fwrite(&nuevo,sizeof(log),1,discoActual);
+        fclose(discoActual);
+    }
 }
 
 int aptVacio(bloquEXT encontrado){
@@ -546,17 +602,26 @@ int aptVacio(bloquEXT encontrado){
     return i;
 }
 
+void divPath(Lista *l,char path[]){
+    char *ptr;
+    ptr = strtok(path,"/");    // Primera llamada => Primer token
+    addLista(l,ptr);
+    while( (ptr=strtok(NULL,"/"))!=NULL){    // Posteriores llamadas
+        addLista(l,ptr);
+    }
+}
+
 bloquEXT getDirEXT(superBloque sb,char nomDisco[],nodol *padre,int id){ //busca un directorio especifico
     int i;
     inodo inod;
-    bloquEXT bloq,aux;
+    bloquEXT bloq;
     inod=getInodoEXT(sb,nomDisco,id);
     bloq=getBloqEXT(sb,nomDisco,inod.apt_dir[0]);
     if(strcmp(padre->nombre,bloq.nombre)==0 && strcmp(inod.tipo,"carpeta")==0){ //padre encontrado
         if(padre->sig!=NULL){
             i=0;
             while(i<6 && bloq.apt[i]!=-1){
-                getDirEXT(sb,nomDisco,padre->sig,bloq.apt[i]);
+                return getDirEXT(sb,nomDisco,padre->sig,bloq.apt[i]);
                 i++;
             }
         }
@@ -576,7 +641,7 @@ void directorioEXT3(infoPart particion,char nomDisco[]){
     bloquEXT encontrado,nuevoBloq;
     sb=recuperarSB(particion,nomDisco);
     if(sb.num_mag==201114717){
-        if(sb.inod_lib>0 && sb.bloq_lib){
+        if(sb.inod_lib>0 && sb.bloq_lib>0){
             do{
                 printf("Nombre del directorio a crear: ");
                 getchar();
@@ -596,20 +661,33 @@ void directorioEXT3(infoPart particion,char nomDisco[]){
             if(strcmp(encontrado.nombre,l->ultimo->nombre)==0 && strcmp(nomDir,l->ultimo->nombre)!=0){
                 i=aptVacio(encontrado);
                 if(i!=-1){
+                    time_t tiempo = time(0);
+                    struct tm *tlocal = localtime(&tiempo);
+                    char fecha[16];
+                    strftime(fecha,16,"%d/%m/%y-%H:%M",tlocal);
                     nuevoIno=getPrimInodLib(sb,nomDisco);
                     nuevoBloq=getPrimBloqLib(sb,nomDisco);
                     strcpy(nuevoIno.tipo,"carpeta");
-                    strcpy(nuevoIno.fech_crea,getFecha());
-                    strcpy(nuevoIno.fech_act,getFecha());
+                    strcpy(nuevoIno.fech_crea,fecha);
+                    strcpy(nuevoIno.fech_act,fecha);
                     nuevoIno.apt_dir[0]=nuevoBloq.llave;
                     strcpy(nuevoBloq.nombre,nomDir);
                     strcpy(nuevoBloq.padre,encontrado.nombre);
                     encontrado.apt[i]=nuevoIno.llave;
-                    actualizarInodo(sb,nomDisco,nuevoInodo);
+                    actualizarInodo(sb,nomDisco,nuevoIno);
                     actualizarBloqEXT(sb,nomDisco,nuevoBloq);
                     actualizarBloqEXT(sb,nomDisco,encontrado);
                     actualizarBitMapBloqEXT(particion.byteInicio,nomDisco,nuevoBloq.llave,'1',sb.num_bloq);
                     actualizarBitMapInodo(particion.byteInicio,nomDisco,nuevoIno.llave,'1');
+                    actualizarBitacora(sb,nomDisco,"",nomDir,1,1);
+                    sb.bit_lib_bloq++;
+                    sb.bit_lib_inod++;
+                    sb.bloq_lib--;
+                    sb.inod_lib--;
+                    sb.p_bloq_lib=sb.p_bloq_lib+sizeof(bloquEXT);
+                    sb.p_inod_lib=sb.p_inod_lib+sizeof(inodo);
+                    sb.ini_bloq_bit=sb.ini_bloq_bit+sizeof(log);
+                    actualizarSB(particion,nomDisco,sb);
                 }else{
                     printf("carpeta con maximo de hijos !!!\n");
                 } 
@@ -619,44 +697,6 @@ void directorioEXT3(infoPart particion,char nomDisco[]){
         }
     }
 }
-
-/*bloquEXT getDirEXT(superBloque sb,char nomDisco[],nodolista *padre,int id){
-    char dir[145];
-    int i;
-    FILE *discoActual;
-    inodo ino;
-    bloquEXT bloqAct;
-    strcpy(dir,ubic_general);
-    strcat(dir,nomDisco);
-    strcat(dir,".vd");
-    discoActual=fopen(dir,"rb+");
-    if(discoActual!=NULL){
-        fseek(discoActual,sb.dir_rz+(id*sizeof(inodo)),SEEK_SET);
-        fread(&ino,sizeof(inodo),1,discoActual);
-        fclose(discoActual);
-    }
-    if(strcmp(ino.tipo,"carpeta")==0){
-        bloqAct=getBloqEXT(sb,nomDisco,ino.apt_dir[0]);
-        if(strcmp(padre->nombre,bloqAct.nombre)==0){
-            if(padre->sig!=NULL){
-                i=0;
-                while(bloqAct.apt[i]!=-1 && buscado.nombre){
-                getDirEXT(sb,nomDisco,padre->sig,bloqAct.apt[i]);
-                i++;
-            }
-                
-            }
-            buscado=bloqAct;
-        }
-    }
-    
-    if(padre->sig!=NULL){
-        pos=pos+sizeof(inodo);
-        return getDirectorio(padre->sig,pos);
-    }else{
-        return getDirectorio(padre,pos);
-    }
-}*/
 
 int existeDirectorio(bloquEXT actual){}
 

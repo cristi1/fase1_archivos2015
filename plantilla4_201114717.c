@@ -1,10 +1,12 @@
 #include "plantilla1_201114717.h"
 #include "plantilla4_201114717.h"
 #include "plantilla2_201114717.h"
+#include "plantilla3_201114717.h"
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 
 void archDiscos(){
     char dir_csv[120];
@@ -369,89 +371,171 @@ void reporteParticion(){
     }
 }
 
-/*void reportePartDisco(){
-    FILE *fichero,*disco_act,*index;
-    char dir_mbr[120],grafica[120],dir[150],id[3];
-    int vacio,p,e;
-    disco aux;
-    mbr miMBR;
-    strcpy(dir_mbr,"");
-    strcat(dir_mbr,ubic_general);
-    strcat(dir_mbr,"estructura1.dot");
-    strcpy(grafica,"");
-    strcpy(grafica,ubic_general);
-    strcpy(grafica,"grafica1.png");
-    printf("ID del disco: ");
+void generarBMInodos(){
+    char id[3],nomPart[32],dirRep[145];
+    int i;
+    disco temp;
+    mbr mbrDisco;
+    infoPart particion;
+    superBloque sb;
+    FILE *rep;
+    printf("ID del disco donde se encuentra la particion: ");
     scanf("%s",id);
-    index=fopen(ubi_index,"rb+");
-    if(index!=NULL){
-        fseek(index,0,SEEK_END);
-        vacio=ftell(index);
-        if(vacio>0){
-            fseek(index,0,SEEK_SET);
-            fread(&aux,sizeof(disco),1,index);
-            while(!feof(index) && strcmp(aux.id,id)!=0){
-                fread(&aux,sizeof(disco),1,index);
-            }
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        mbrDisco=recuperarMBR(temp.nombre);
+        if(mbrDisco.cantPart>0){
+            printf("Nombre de la particion: ");
+            getchar();
             fflush(stdin);
-            if(strcmp(aux.id,id)==0 && aux.estado==1){
-                strcpy(dir,"");
-                strcat(dir,ubic_general);
-                strcat(dir,aux.nombre);
-                strcat(dir,".vd");
-                disco_act=fopen(dir,"rb+");
-                if(disco_act!=NULL){
-                    fread(&miMBR,sizeof(mbr),1,disco_act);
-                    fclose(disco_act);
-                    fichero = fopen("estructura.dot", "w" ); //dir_mbr
-                    e=0;
-                    if(fichero=NULL){
-                        fprintf(fichero,"digraph G {node[ shape=box, style=filled,color=Gray95]; edge[color=blue]; rankdir=BT;\n" );
-                        fprintf(fichero,"subgraph cluster0 {color=lightgrey;  node [color=white]; \n");
-                        int k;
-                        if(aux.spLibre>0){
-                            e=1;
-                            fprintf(fichero,"subgraph cluster1 {color=lightgrey;  node [color=white];\n");
-                            fprintf(fichero,"server1[label=\"Libre\"];}\n");
-                        }
-                        if(miMBR.cantPart>0){
-                            for(k=0;k<miMBR.cantPart;k++){
-                                if(miMBR.iPart[k].tipoPart==1){
-                                    fprintf(fichero,"subgraph cluster%i {color=lightgrey;  node [color=white];\n",k+2);
-                                    fprintf(fichero,"server%i[label=\"Primaria\"];}",k+1+p);
-                                }else{
-                                    if(miMBR.iPart[k].tipoPart==2){
-                                        fprintf(fichero,"subgraph cluster%i {color=lightgrey;  node [color=white];\n",k+1+p);
-                                        fprintf(fichero,"server%i[label=\"Extendida\"];\n",k+1+p);
-                                        for(p=0;p<aux.prtLog;p++){
-                                            fprintf(fichero,"subgraph cluster%i {color=lightgrey;  node [color=white];\n",k+1+p);
-                                            fprintf(fichero,"server%i[label=\"Logica\"];}\n",k+1+p);
-                                        }
-                                        fprintf(fichero,"}\n");
-                                    }       
-                                }
-                            }
-                        }
-                        fprintf(fichero,"subgraph cluster%i {color=lightgrey;  node [color=white];",k+1);
-                        fprintf(fichero,"server%i[label=\"MBR\"];}",k+1);
-                        fprintf(fichero,"\n}}");
-                        if( !fclose(fichero) ){
-                        fflush(stdin);
-                        //printf( "Archivo cerrado\n" );
-                        /*strcpy(dot,"");
-                        strcat(dot,"dot -Tpng ");
-                        strcat(dot,dir_mbr);
-                        strcat(dot," -o ");
-                        strcat(dot,grafica);
-                         //"dot -Tpng %s -o %s",dir_mbr,grafica
-                        }
-                        system("dot -Tpng estructura1.dot -o grafica1.png");
-                    } 
+            scanf("%[^\n]",nomPart);
+            particion=buscarInfoPart(mbrDisco,nomPart);
+            if(strcmp(particion.nombre,nomPart)==0 && particion.estado==1){
+                strcpy(dirRep,"");
+                strcat(dirRep,ubic_general);
+                strcat(dirRep,"bitmap_inodo.txt");
+                rep=fopen(dirRep,"w");
+                if(rep!=NULL){
+                    sb=recuperarSB(particion,mbrDisco.nombre);
+                    fprintf(rep,"\n\t\tREPORTE BITMAP INODO %s  \n",particion.nombre);
+                    fprintf(rep,"--------------------------------------------------------------------------\n");
+                    for(i=0;i<sb.num_inod;i++){
+                        byte temp;
+                        temp=getBMInodo(particion,mbrDisco.nombre,i);
+                        fprintf(rep,"|%c",temp.a);
+                    }
+                    fprintf(rep,"|");
+                    fclose(rep);
+                    printf("se creo reporte bitmap_inodo.txt !!\n");
+                }else{
+                    printf("no se pudo crear el reporte bitmap_inodo.txt !!\n");
                 }
-            }else{
-                printf("error id %s no encontrado !!\n",id);
             }
         }
-        fclose(index);
     }
-}*/
+}
+
+void generarBMBloque(){
+    char id[3],nomPart[32],dirRep[145];
+    int i;
+    disco temp;
+    mbr mbrDisco;
+    infoPart particion;
+    superBloque sb;
+    FILE *rep;
+    printf("ID del disco donde se encuentra la particion: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        mbrDisco=recuperarMBR(temp.nombre);
+        if(mbrDisco.cantPart>0){
+            printf("Nombre de la particion: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",nomPart);
+            particion=buscarInfoPart(mbrDisco,nomPart);
+            if(strcmp(particion.nombre,nomPart)==0 && particion.estado==1){
+                strcpy(dirRep,"");
+                strcat(dirRep,ubic_general);
+                strcat(dirRep,"bitmap_bloque.txt");
+                rep=fopen(dirRep,"w");
+                if(rep!=NULL){
+                    sb=recuperarSB(particion,mbrDisco.nombre);
+                    fprintf(rep,"\n\t\tREPORTE BITMAP BLOQUE %s  \n",particion.nombre);
+                    fprintf(rep,"--------------------------------------------------------------------------\n");
+                    for(i=0;i<sb.num_bloq;i++){
+                        byte temp;
+                        temp=getBMBloqEXT(particion,mbrDisco.nombre,sb,i);
+                        fprintf(rep,"|%c",temp.a);
+                    }
+                    fprintf(rep,"|");
+                    fclose(rep);
+                    printf("se creo reporte bitmap_bloque.txt !!\n");
+                }else{
+                    printf("no se pudo crear el reporte bitmap_bloque.txt !!\n");
+                }
+            }
+        }
+    }
+}
+
+void generarBitacora(){
+    char id[3],nomPart[32],dirRep[145],tipOpe[10],tipo[8];
+    int i;
+    disco temp;
+    mbr mbrDisco;
+    infoPart particion;
+    superBloque sb;
+    FILE *rep;
+    printf("ID del disco donde se encuentra la particion: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        mbrDisco=recuperarMBR(temp.nombre);
+        if(mbrDisco.cantPart>0){
+            printf("Nombre de la particion: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",nomPart);
+            particion=buscarInfoPart(mbrDisco,nomPart);
+            if(strcmp(particion.nombre,nomPart)==0 && particion.estado==1){
+                strcpy(dirRep,"");
+                strcat(dirRep,ubic_general);
+                strcat(dirRep,"bitacora.txt");
+                rep=fopen(dirRep,"w");                
+                if(rep!=NULL){
+                    sb=recuperarSB(particion,mbrDisco.nombre);
+                    time_t tiempo = time(0);
+                    struct tm *tlocal = localtime(&tiempo);
+                    char output[16];
+                    strftime(output,16,"%d/%m/%y-%H:%M",tlocal);
+                    fprintf(rep,"\n\t\t LOG %s %s\n",particion.nombre,output);
+                    fprintf(rep,"--------------------------------------------------------------------------\n");
+                    i=0;
+                    log bitac;
+                    bitac=getBitacora(particion,mbrDisco.nombre,sb,i);
+                    while(i<99 && bitac.tipo!=-1){
+                        strcpy(tipOpe,"");
+                        strcpy(tipo,"");
+                        switch(bitac.tip_oper){
+                            case 1:
+                                strcpy(tipOpe,"Crear");
+                                break;
+                            case 2:
+                                strcpy(tipOpe,"Eliminar");
+                                break;
+                            case 3:
+                                strcpy(tipOpe,"Modificar");
+                                break;
+                            default:
+                                strcpy(tipOpe,"error");
+                        }
+                        switch(bitac.tipo){
+                            case 0:
+                                strcpy(tipo,"Archivo");
+                                break;
+                            case 1:
+                                strcpy(tipo,"Directorio");
+                                break;
+                            default:
+                                strcpy(tipo,"error");
+                        }
+                        fprintf(rep,"\n\n *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
+                        fprintf(rep,"\nTipo de operacion: %s",tipOpe);
+                        fprintf(rep,"\nTipo: %s",tipo);
+                        fprintf(rep,"\nNombre: %s",bitac.nombre);
+                        fprintf(rep,"\nContenido: %s",bitac.contenido);
+                        fprintf(rep,"\nFecha: %s",bitac.fech_trans);
+                        i=i+1;
+                        bitac=getBitacora(particion,mbrDisco.nombre,sb,i);
+                    }
+                    fprintf(rep,"\n\n *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+                    fclose(rep);
+                    printf("se creo reporte bitacora.txt !!\n");
+                }else{
+                    printf("no se pudo crear el reporte bitacora.txt !!\n");
+                }
+            }
+        }
+    }
+}

@@ -18,11 +18,13 @@ extern "C" {
     void menu2();
     void menu3();
     void menu4();
+    void menu5();
     void verificar0();
     void verificar1();
     void verificar2();
     void verificar3();
     void verificar4();
+    void verificar5();
 
 #ifdef	__cplusplus
 }

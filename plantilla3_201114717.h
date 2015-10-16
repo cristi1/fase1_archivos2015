@@ -68,6 +68,10 @@ extern "C" {
     void archivoENLAZADO();
     void archivoEXT3();
     void crearArchivo();
+    byte getBMInodo(infoPart particion,char nomDisco[],int id);
+    byte getBMBloqEXT(infoPart particion,char nomDisco[],superBloque sb,int id);
+    log getBitacora(infoPart particion,char nomDisco[],superBloque sb,int id);
+    superBloque recuperarSB(infoPart particion,char nomDisco[]);
     
 #ifdef	__cplusplus
 }

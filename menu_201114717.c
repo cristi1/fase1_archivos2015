@@ -38,6 +38,9 @@ void verificar0(int n){
         case 4:
             menu4();
             break;
+        case 5:
+            menu5();
+            break;
         default:
             menu0();
     }
@@ -191,12 +194,50 @@ void verificar4(int n){
             sleep(2);
             menu4();
             break;
-        /*case 4:
-            reportePartDisco();
+        case 5:
+            generarBMInodos();
             sleep(2);
             menu4();
-            break;*/
+            break;
+        case 6:
+            generarBMBloque();
+            sleep(2);
+            menu4();
+            break;
+        case 7:
+            generarBitacora();
+            sleep(2);
+            menu4();
+            break;
         default:
             menu0();
     }
 }
+
+void menu5(){
+    int n=0;
+    system("clear");
+    fflush(stdin);
+    printf("\n******* PROYECTO FASE 1 MENEJO E IMPLEMENTACION DE ARCHIVOS ******* \n");
+    printf("\n0. Menu Principal\n");
+    printf("1. Crear Directorio\n");
+    printf("2. Eliminar Directorio\n");
+    printf("3. Buscar Directorio\n");
+    printf("4. Listar Directorio Actual\n");
+    printf("5. Listar Directorio Recursivo\n");
+    scanf(" %d",&n);
+    verificar5(n);
+}
+
+void verificar5(int n){
+    switch(n){
+        case 1:
+            crearDirEXT3();
+            sleep(2);
+            menu5();
+            break;
+        default:
+            menu0();
+    }
+}
+//crearDirEXT3()

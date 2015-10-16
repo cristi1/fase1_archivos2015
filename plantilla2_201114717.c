@@ -354,7 +354,7 @@ int crearEXT3(infoPart particion, char nomDisco[]){ //retorna numero de bloques 
         strcpy(sb.fech_desmont,"dd/mm/aaaa-hh:mm");
         strcpy(sb.fech_mont,fecha);
         sb.ini_bloq=particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo);
-        sb.ini_bloq_bit=-1; //??????????
+        sb.ini_bloq_bit=particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo)+n*sizeof(bloquEXT)+sizeof(log); //??????????
         sb.ini_log=particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo)+n*sizeof(bloquEXT);
         sb.bloq_lib=n-1;
         sb.inod_lib=n-1;
