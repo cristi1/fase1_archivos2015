@@ -1,6 +1,8 @@
 #include "menu_201114717.h"
 #include "plantilla1_201114717.h"
 #include "plantilla2_201114717.h"
+#include "plantilla3_201114717.h"
+#include "lista.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -142,6 +144,7 @@ int escribirBloques(infoPart info,int i,int numBloqs,char contenido[]){
 
 void archivoFAT(){}
 void modificarFAT(){}
+void eliminarFAT(){}
 
 //------------------------ARCHIVO ENLAZADO--------------------------------------
 
@@ -328,14 +331,365 @@ void leerEnlazado(infoPart particion,char nomDisco[]){
     } 
 }
 
-void eliminarArchivo(){
-    
+eliminarENLAZADO(infoPart particion,char nom[]){
+    directorio actual;
+    int i,pos;
+    actual=recuperarDirEnlazado(nom,particion);
+    pos=particion.byteInicio+sizeof(directorio);
+    for(i=0;i<actual.fin;i++){
+        bloqEnl temp;
+        strcpy(temp.contenido,"");
+        temp.id=i;
+        temp.sig=-1;
+        escribirBloqEnlazado(nom,temp,pos);
+        pos=pos+sizeof(bloqEnl);
+    }
+    pos=particion.byteInicio;
+    actual.fin=0;
+    actual.inicio=0;
+    strcpy(actual.nombre,"");
+    actualizarDirEnlazado(nom,actual,pos);
 }
 
 //----------------------------ARCHIVO EXT3--------------------------------------
+superBloque recuperarSB(infoPart particion,char nomDisco[]){
+    char dir[145];
+    FILE *discoActual;
+    superBloque actual;
+    actual.num_mag=-1;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,particion.byteInicio,SEEK_SET);
+        fread(&actual,sizeof(superBloque),1,discoActual);
+        fclose(discoActual);
+    }else{
+        printf("error al aperturar el disco %s.vd !!\n",nomDisco);
+    }
+    return actual;
+}
+
+void actualizarSB(infoPart particion,char nomDisco[],superBloque actual){
+    char dir[145];
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,particion.byteInicio,SEEK_SET);
+        fwrite(&actual,sizeof(superBloque),1,discoActual);
+        fclose(discoActual);
+    }else{
+        printf("error al aperturar el disco %s.vd !!\n",nomDisco);
+    }
+}
+
+inodo getPrimInodLib(superBloque sb,char nomDisco[]){ //devuelve el primer inodo libre
+    char dir[145];
+    FILE *discoActual;
+    inodo ino;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.p_inod_lib,SEEK_SET);
+        fread(&ino,sizeof(inodo),1,discoActual);
+        fclose(discoActual);
+    }
+    return ino;
+} 
+
+bloquEXT getPrimBloqLib(superBloque sb,char nomDisco[]){ //devuelve el primer bloquEXT libre
+    char dir[145];
+    FILE *discoActual;
+    bloquEXT bloqAct;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.p_bloq_lib,SEEK_SET);
+        fread(&bloqAct,sizeof(bloquEXT),1,discoActual);
+        fclose(discoActual);
+    }
+    return bloqAct;
+} 
+
+inodo getInodoEXT(superBloque sb,char nomDisco[],int id){ //devuelve un inodo con id especifico
+    char dir[145];
+    FILE *discoActual;
+    inodo ino;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.dir_rz+(id*sizeof(inodo)),SEEK_SET);
+        fread(&ino,sizeof(inodo),1,discoActual);
+        fclose(discoActual);
+    }
+    return ino;
+}
+
+bloquEXT getBloqEXT(superBloque sb,char nomDisco[],int id){ //devuelve un bloque con id especifico
+    char dir[145];
+    FILE *discoActual;
+    bloquEXT bloqAct;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.ini_bloq+(id*sizeof(bloquEXT)),SEEK_SET);
+        fread(&bloqAct,sizeof(bloquEXT),1,discoActual);
+        fclose(discoActual);
+    }
+    return bloqAct;
+}
+
+void actualizarInodo(superBloque sb,char nomDisco[],inodo ino){
+    char dir[145];
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.dir_rz+(ino.llave*sizeof(inodo)),SEEK_SET);
+        fwrite(&ino,sizeof(inodo),1,discoActual);
+        fclose(discoActual);
+    }
+}
+
+void actualizarBloqEXT(superBloque sb,char nomDisco[],bloquEXT bloqAct){
+    char dir[145];
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.ini_bloq+(bloqAct.llave*sizeof(bloquEXT)),SEEK_SET);
+        fwrite(&bloqAct,sizeof(bloquEXT),1,discoActual);
+        fclose(discoActual);
+    }
+}
+
+void actualizarBitMapInodo(int inicio,char nomDisco[],int id,char val){
+    char dir[145];
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,inicio+sizeof(superBloque)+id,SEEK_SET);
+        byte bitmap;
+        bitmap.a=val;
+        fwrite(&bitmap,sizeof(byte),1,discoActual);//fputc(fat.a,discoActual);
+        fclose(discoActual);
+    }
+}
+
+void actualizarBitMapBloqEXT(int inicio,char nomDisco[],int id,char val,int n){
+    char dir[145];
+    FILE *discoActual;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,inicio+sizeof(superBloque)+n+id,SEEK_SET);
+        byte bitmap;
+        bitmap.a=val;
+        fwrite(&bitmap,sizeof(byte),1,discoActual);//fputc(fat.a,discoActual);
+        fclose(discoActual);
+    }
+}
+
+void actualizarBitacora(){
+    
+}
+
+void divPath(Lista *l,char path[]){
+    char *ptr;
+    ptr = strtok(path,"/");    // Primera llamada => Primer token
+    addLista(l,ptr);
+    while( (ptr=strtok(NULL,"/"))!=NULL){    // Posteriores llamadas
+        addLista(l,ptr);
+    }
+}
+
+char* getFecha(){
+    time_t tiempo = time(0);
+    struct tm *tlocal = localtime(&tiempo);
+    char fecha[16];
+    char *fech;
+    strftime(fecha,16,"%d/%m/%y-%H:%M",tlocal);
+    strcpy(fech,fecha);
+    return fech;
+}
+
+int aptVacio(bloquEXT encontrado){
+    int i;
+    i=0;
+    while(i<6 && encontrado.apt[i]!=-1){
+        i++;
+    }
+    if(encontrado.apt[i]!=-1){ //carpeta con 6 hijos (llena)
+        i=-1;
+    }
+    return i;
+}
+
+bloquEXT getDirEXT(superBloque sb,char nomDisco[],nodol *padre,int id){ //busca un directorio especifico
+    int i;
+    inodo inod;
+    bloquEXT bloq,aux;
+    inod=getInodoEXT(sb,nomDisco,id);
+    bloq=getBloqEXT(sb,nomDisco,inod.apt_dir[0]);
+    if(strcmp(padre->nombre,bloq.nombre)==0 && strcmp(inod.tipo,"carpeta")==0){ //padre encontrado
+        if(padre->sig!=NULL){
+            i=0;
+            while(i<6 && bloq.apt[i]!=-1){
+                getDirEXT(sb,nomDisco,padre->sig,bloq.apt[i]);
+                i++;
+            }
+        }
+    }else{
+        bloq.llave=-1;
+    }
+    return bloq;
+}
+
+void directorioEXT3(infoPart particion,char nomDisco[]){
+    char nomDir[16],path[150];
+    int tm,i;
+    Lista *l;
+    nodol *temp;
+    superBloque sb;
+    inodo nuevoIno;
+    bloquEXT encontrado,nuevoBloq;
+    sb=recuperarSB(particion,nomDisco);
+    if(sb.num_mag==201114717){
+        if(sb.inod_lib>0 && sb.bloq_lib){
+            do{
+                printf("Nombre del directorio a crear: ");
+                getchar();
+                fflush(stdin);
+                scanf("%[^\n]",nomDir);
+                tm=strlen(nomDir); 
+            }while(tm>16);
+            strcpy(path,"");
+            printf("Path para el nuevo directorio: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",path);
+            l=malloc(sizeof(Lista));
+            divPath(l,path);
+            temp=l->primero;
+            encontrado=getDirEXT(sb,nomDisco,temp,0); //pos actual 
+            if(strcmp(encontrado.nombre,l->ultimo->nombre)==0 && strcmp(nomDir,l->ultimo->nombre)!=0){
+                i=aptVacio(encontrado);
+                if(i!=-1){
+                    nuevoIno=getPrimInodLib(sb,nomDisco);
+                    nuevoBloq=getPrimBloqLib(sb,nomDisco);
+                    strcpy(nuevoIno.tipo,"carpeta");
+                    strcpy(nuevoIno.fech_crea,getFecha());
+                    strcpy(nuevoIno.fech_act,getFecha());
+                    nuevoIno.apt_dir[0]=nuevoBloq.llave;
+                    strcpy(nuevoBloq.nombre,nomDir);
+                    strcpy(nuevoBloq.padre,encontrado.nombre);
+                    encontrado.apt[i]=nuevoIno.llave;
+                    actualizarInodo(sb,nomDisco,nuevoInodo);
+                    actualizarBloqEXT(sb,nomDisco,nuevoBloq);
+                    actualizarBloqEXT(sb,nomDisco,encontrado);
+                    actualizarBitMapBloqEXT(particion.byteInicio,nomDisco,nuevoBloq.llave,'1',sb.num_bloq);
+                    actualizarBitMapInodo(particion.byteInicio,nomDisco,nuevoIno.llave,'1');
+                }else{
+                    printf("carpeta con maximo de hijos !!!\n");
+                } 
+            }else{
+                printf("error no se puede crear el directorio el path no existe o el nombre de directorio ya existe!!!\n");
+            }
+        }
+    }
+}
+
+/*bloquEXT getDirEXT(superBloque sb,char nomDisco[],nodolista *padre,int id){
+    char dir[145];
+    int i;
+    FILE *discoActual;
+    inodo ino;
+    bloquEXT bloqAct;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        fseek(discoActual,sb.dir_rz+(id*sizeof(inodo)),SEEK_SET);
+        fread(&ino,sizeof(inodo),1,discoActual);
+        fclose(discoActual);
+    }
+    if(strcmp(ino.tipo,"carpeta")==0){
+        bloqAct=getBloqEXT(sb,nomDisco,ino.apt_dir[0]);
+        if(strcmp(padre->nombre,bloqAct.nombre)==0){
+            if(padre->sig!=NULL){
+                i=0;
+                while(bloqAct.apt[i]!=-1 && buscado.nombre){
+                getDirEXT(sb,nomDisco,padre->sig,bloqAct.apt[i]);
+                i++;
+            }
+                
+            }
+            buscado=bloqAct;
+        }
+    }
+    
+    if(padre->sig!=NULL){
+        pos=pos+sizeof(inodo);
+        return getDirectorio(padre->sig,pos);
+    }else{
+        return getDirectorio(padre,pos);
+    }
+}*/
+
+int existeDirectorio(bloquEXT actual){}
+
+void crearDirEXT3(){
+    char id[3],nomPart[32],dirNuevo[16];
+    disco temp;
+    mbr mbrDisco;
+    infoPart particion;
+    printf("ID del disco donde se creara el Directorio: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        mbrDisco=recuperarMBR(temp.nombre);
+        if(mbrDisco.cantPart>0){
+            printf("Nombre de la particion: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",nomPart);
+            particion=buscarInfoPart(mbrDisco,nomPart);
+            if(strcmp(particion.nombre,nomPart)==0 && particion.estado==1 && particion.sisArchivos==3){
+                directorioEXT3(particion,temp.nombre);
+            }else{
+                printf("error no se puede crear el directorio!!\n");
+            }
+        }
+    }
+}
+
+void existeDirEXT3(){}
 
 void archivoEXT3(){}
 void modificarEXT3(){}
+void eliminarEXT3(){}
 //--------------------------------GENERAL---------------------------------------
 void crearArchivo(){
     char id[3],nomPart[32],nomNuevo[16];
@@ -401,6 +755,43 @@ void modificarArchivo(){
                         break;
                     case 3:
                         modificarEXT3(); //edita y lee 
+                        break;
+                    default:
+                        printf("particion no formateada o existe algun error en el sistema de archivos %i!!\n",particion.sisArchivos);
+                }
+            }else{
+                printf("error la particion %s ha sido eliminada!!\n",particion.nombre);
+            }
+        }
+    }
+}
+
+void eliminarArchivo(){
+    char id[3],nomPart[32],nomNuevo[16];
+    disco temp;
+    mbr mbrDisco;
+    infoPart particion;
+    printf("ID del disco donde se eliminara el Archivo: ");
+    scanf("%s",id);
+    temp=existeDiscoIndex(id);
+    if(strcmp(temp.id,id)==0){
+        mbrDisco=recuperarMBR(temp.nombre);
+        if(mbrDisco.cantPart>0){
+            printf("Nombre de la particion: ");
+            getchar();
+            fflush(stdin);
+            scanf("%[^\n]",nomPart);
+            particion=buscarInfoPart(mbrDisco,nomPart);
+            if(strcmp(particion.nombre,nomPart)==0 && particion.estado==1){
+                switch(particion.sisArchivos){
+                    case 1:
+                        eliminarFAT();
+                        break;
+                    case 2:
+                        eliminarENLAZADO(particion,temp.nombre);
+                        break;
+                    case 3:
+                        eliminarEXT3();
                         break;
                     default:
                         printf("particion no formateada o existe algun error en el sistema de archivos %i!!\n",particion.sisArchivos);

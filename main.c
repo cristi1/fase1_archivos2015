@@ -10,6 +10,8 @@
 #include "menu_201114717.h"
 #include "plantilla1_201114717.h"
 #include "plantilla2_201114717.h"
+#include "plantilla3_201114717.h"
+#include "lista.h"
 
 void main(int argc, char** argv) {
     ////home//clnx//Escritorio//pp a1//
@@ -17,7 +19,7 @@ void main(int argc, char** argv) {
     //printf("tamaño %i\n",sizeof(fatRootFolder));
     //printf("tamaño %i\n",sizeof(mbr));
     //system("gedit //home//clnx//Escritorio//hola.txt");
-    inicio();
+    //inicio();
     //archivoENLAZADO();
     /*int i,r,n;
     i=250;
@@ -40,5 +42,11 @@ void main(int argc, char** argv) {
     }
     printf("%s\n",nom);
     printf("%s\n",ext);*/
+
+    char path[150]="/home/clnx/Escritorio/pp a1/archivo.txt";
+    Lista *l;
+    l=malloc(sizeof(Lista));
+    divPath(l,path);
+    recLista(l);
 }
 

@@ -16,6 +16,8 @@ void menu0(){
     printf("2. Administracion de Particiones\n");
     printf("3. Administracion de Archivos\n");
     printf("4. Reportes\n");
+    printf("5. Adiministracion de Directorios\n");
+    printf("6. Funciones Especiales\n");
     scanf(" %d",&n);
     verificar0(n);
 }
@@ -119,9 +121,10 @@ void menu3(){
     printf("\n******* PROYECTO FASE 1 MENEJO E IMPLEMENTACION DE ARCHIVOS ******* \n");
     printf("\n0. Menu Principal\n");
     printf("1. Crear Archivo\n");
-    printf("2. Modificar Archivo\n"); //leer archivos sistema de archivos enlazado
+    printf("2. Modificar/Leer Archivo\n"); //leer archivos sistema de archivos enlazado
     printf("3. Eliminar Archivo\n"); //borrar archivos sistema de archivos enlazado
-    printf("4. Renombrar Archivo\n");
+    printf("4. Renombrar Archivo\n"); //EXT y FAT
+    printf("5. Buscar Archivos\n"); //disponible para EXT3
     scanf(" %d",&n);
     verificar3(n);
 }
@@ -164,6 +167,9 @@ void menu4(){
     printf("2. Reporte del MBR\n");
     printf("3. Reporte de Particion\n");
     printf("4. Reporte Particiones del Disco\n");
+    printf("5. Reporte Bitmap Inodos\n");
+    printf("6. Reporte Bitmap Bloques\n");
+    printf("7. Reporte Bitacora\n");
     scanf(" %d",&n);
     verificar4(n);
 }

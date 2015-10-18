@@ -1,9 +1,11 @@
 #include "plantilla1_201114717.h"
 #include "plantilla2_201114717.h"
+#include "plantilla3_201114717.h"
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 
 int byteIndAct=0;
 
@@ -251,7 +253,7 @@ int crearFAT(infoPart particion, char nomDisco[]){ //retorna numero de bloques c
     }
     return n;
 }
-
+//-----------------------------ENLAZADO-----------------------------------------
 int crearENLAZADO(infoPart particion, char nomDisco[]){ //retorna numero de bloques creados
     char dir[145];
     int n,i;
@@ -282,13 +284,153 @@ int crearENLAZADO(infoPart particion, char nomDisco[]){ //retorna numero de bloq
     }
     return n;
 }
-
-int crearEXT3(infoPart particion, char nomDisco[]){ //retorna numero de bloques ##creados para archivos
-    int n;
-    n=0;
-    return n;
+//--------------------------------------EXT3------------------------------------
+inodo nuevoInodo(){
+    inodo nuevo;
+    nuevo.apt_dir[0]=-1;
+    nuevo.apt_dir[1]=-1;
+    nuevo.apt_dir[2]=-1;
+    nuevo.apt_dir[3]=-1;
+    nuevo.apt_dir[4]=-1;
+    nuevo.apt_ind[0]=-1;
+    nuevo.apt_ind[1]=-1;
+    strcpy(nuevo.fech_acc,"dd/mm/aaaa-hh:mm");
+    strcpy(nuevo.fech_act,"dd/mm/aaaa-hh:mm");
+    strcpy(nuevo.fech_crea,"dd/mm/aaaa-hh:mm");
+    nuevo.llave=-1;
+    nuevo.tam=-1;
+    strcpy(nuevo.tipo,""); //carpeta o archivo
+    return nuevo;
 }
 
+bloquEXT nuevobloqEXT3(){
+    bloquEXT nuevo;
+    nuevo.apt[0]=-1;
+    nuevo.apt[1]=-1;
+    nuevo.apt[2]=-1;
+    nuevo.apt[3]=-1;
+    nuevo.apt[4]=-1;
+    nuevo.apt[5]=-1;
+    strcpy(nuevo.contenido,"");
+    nuevo.llave=-1;
+    strcpy(nuevo.nombre,"");
+    strcpy(nuevo.padre,"");
+    return nuevo;
+}
+
+log nuevaBitacora(){
+    log bitacora;
+    strcpy(bitacora.contenido,"");
+    strcpy(bitacora.fech_trans,"dd/mm/aaaa-hh:mm");
+    strcpy(bitacora.nombre,"");
+    bitacora.tip_oper=-1;
+    bitacora.tipo=-1;
+    return bitacora;
+}
+
+int crearEXT3(infoPart particion, char nomDisco[]){ //retorna numero de bloques ##creados para archivos
+    char dir[145];
+    int n,i;
+    n=0;
+    FILE *discoActual;
+    superBloque sb;
+    strcpy(dir,ubic_general);
+    strcat(dir,nomDisco);
+    strcat(dir,".vd");
+    discoActual=fopen(dir,"rb+");
+    if(discoActual!=NULL){
+        
+        time_t tiempo = time(0);
+	struct tm *tlocal = localtime(&tiempo);
+	char fecha[16];
+	strftime(fecha,16,"%d/%m/%y-%H:%M",tlocal);
+        
+        n=(particion.tam-(2*sizeof(superBloque))-(100*sizeof(log)))/(3*(sizeof(inodo)+sizeof(bloquEXT)));
+        fseek(discoActual,particion.byteInicio,SEEK_SET);
+        sb.bit_lib_inod=particion.byteInicio+sizeof(superBloque)+1;
+        sb.bit_lib_bloq=particion.byteInicio+sizeof(superBloque)+n+1;
+        sb.cant_mont=1;
+        sb.dir_rz=particion.byteInicio+sizeof(superBloque)+2*n;
+        strcpy(sb.fech_desmont,"dd/mm/aaaa-hh:mm");
+        strcpy(sb.fech_mont,fecha);
+        sb.ini_bloq=particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo);
+        sb.ini_bloq_bit=-1; //??????????
+        sb.ini_log=particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo)+n*sizeof(bloquEXT);
+        sb.bloq_lib=n-1;
+        sb.inod_lib=n-1;
+        sb.num_bloq=n;
+        sb.num_inod=n;
+        sb.num_mag=201114717;
+        sb.tam_bloq=64;
+        sb.p_inod_lib=particion.byteInicio+sizeof(superBloque)+2*n+sizeof(inodo);
+        sb.p_bloq_lib=particion.byteInicio+sizeof(superBloque)+2*n+n*sizeof(inodo)+sizeof(bloquEXT);
+        //----------------------------------------------------------------------
+        fwrite(&sb,sizeof(superBloque),1,discoActual); //escribe sb ya actualizado con raiz creada --> /
+        //--------------Escribe bitmap de inodos y bloques----------------------
+        byte rz;
+        rz.a='1';
+        fwrite(&rz,sizeof(byte),1,discoActual); //raiz
+        for(i=0;i<(n-1);i++){
+            byte bitmap;
+            bitmap.a='0';
+            //fputc(fat.a,discoActual);
+            fwrite(&bitmap,sizeof(byte),1,discoActual);
+        }
+        fwrite(&rz,sizeof(byte),1,discoActual); //raiz
+        for(i=0;i<(n-1);i++){ 
+            byte bitmap;
+            bitmap.a='0';
+            //fputc(fat.a,discoActual);
+            fwrite(&bitmap,sizeof(byte),1,discoActual);
+        }
+        //----------------------Escribe inodos----------------------------------
+        inodo raiz;
+        raiz=nuevoInodo();
+        strcpy(raiz.tipo,"carpeta");
+        strcpy(raiz.fech_crea,fecha);
+        strcpy(raiz.fech_act,fecha);
+        raiz.llave=0;
+        raiz.apt_dir[0]=0; //apunta al bloq de datos con id 0
+        fwrite(&raiz,sizeof(inodo),1,discoActual); //escribe inodo raiz
+        for(i=0;i<n-1;i++){
+            inodo nuevo;
+            nuevo=nuevoInodo();
+            nuevo.llave=i+1;
+            fwrite(&nuevo,sizeof(inodo),1,discoActual);
+        }
+        //----------------------Escribe bloques---------------------------------
+        bloquEXT brz;
+        brz=nuevobloqEXT3();
+        brz.llave=0;
+        strcpy(brz.nombre,"root"); //nombre de la carpeta raiz
+        fwrite(&brz,sizeof(bloquEXT),1,discoActual);
+        for(i=0;i<n-1;i++){
+            bloquEXT nuevo;
+            nuevo=nuevobloqEXT3();
+            nuevo.llave=i+1;
+            fwrite(&nuevo,sizeof(bloquEXT),1,discoActual);
+        }
+        //----------------------Escribe Bitacoras-------------------------------
+        log bitac;
+        bitac=nuevaBitacora();
+        strcpy(bitac.fech_trans,fecha);
+        strcpy(bitac.nombre,"root");
+        bitac.tip_oper=1;
+        bitac.tipo=1;
+        fwrite(&bitac,sizeof(log),1,discoActual);
+        for(i=0;i<99;i++){
+            log bitacora;
+            bitacora=nuevaBitacora();
+            fwrite(&bitacora,sizeof(log),1,discoActual);
+        }
+        fwrite(&sb,sizeof(superBloque),1,discoActual);//copia superbloque sb
+        fclose(discoActual);
+    }else{
+        printf("error al intentar aperturar disco %s.vd",nomDisco);
+    }
+    return n;
+}
+//------------------------------------------------------------------------------
 mbr recuperarMBR(char nom[]){ //devuelve el mbr del disco con nombre-->nom
     char dir[145];
     FILE *discoActual;

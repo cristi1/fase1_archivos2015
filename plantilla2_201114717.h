@@ -7,6 +7,7 @@
 
 #ifndef PLANTILLA2_201114717_H
 #define	PLANTILLA2_201114717_H
+#include "plantilla3_201114717.h"
 
 #ifdef	__cplusplus
 extern "C" {
@@ -42,6 +43,10 @@ extern "C" {
     infoPart buscarInfoPart(mbr datosDisco,char nomPart[]);
     void FormatearParticion();
     void ActualizarMBR(char nomDisco[],mbr actual,infoPart act);
+    
+    inodo nuevoInodo();
+    bloquEXT nuevobloqEXT3();
+    log nuevaBitacora();
     
                         /*while(i<cantidad && limite<particion.cantBloques){
                         byte temp;
