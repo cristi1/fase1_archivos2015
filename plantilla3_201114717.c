@@ -611,25 +611,54 @@ void divPath(Lista *l,char path[]){
     }
 }
 
-bloquEXT getDirEXT(superBloque sb,char nomDisco[],nodol *padre,int id){ //busca un directorio especifico
-    int i;
+bloquEXT getDirEXT(superBloque sb,char nomDisco[],nodol *padre,int id,char nuevo[]){ //busca un directorio especifico
+    int i,exist;
     inodo inod;
-    bloquEXT bloq;
-    inod=getInodoEXT(sb,nomDisco,id);
-    bloq=getBloqEXT(sb,nomDisco,inod.apt_dir[0]);
-    if(strcmp(padre->nombre,bloq.nombre)==0 && strcmp(inod.tipo,"carpeta")==0){ //padre encontrado
-        if(padre->sig!=NULL){
+    bloquEXT bloq,bloq_aux;
+    if(strcmp(padre->nombre,"root")==0){
+        exist=1;
+        inod=getInodoEXT(sb,nomDisco,id);
+        bloq=getBloqEXT(sb,nomDisco,inod.apt_dir[0]);
+        while(padre->sig!=NULL && exist==1 && strcmp(inod.tipo,"carpeta")==0){
+            exist=0;
             i=0;
             while(i<6 && bloq.apt[i]!=-1){
-                return getDirEXT(sb,nomDisco,padre->sig,bloq.apt[i]);
+                inod=getInodoEXT(sb,nomDisco,bloq.apt[i]);
+                bloq_aux=getBloqEXT(sb,nomDisco,inod.apt_dir[0]);
+                if(strcmp(padre->sig->nombre,bloq_aux.nombre)==0){ //subcarpeta encontrada
+                    exist==1;
+                    padre=padre->sig;
+                    bloq=bloq_aux;
+                    break;
+                }
+                i++;
+            }
+        }
+        if(exist==0){
+            bloq.llave=-1; //path no encontrada
+        }else{
+            i=0;
+            while(i<6 && bloq.apt[i]!=-1){
+                inod=getInodoEXT(sb,nomDisco,bloq.apt[i]);
+                bloq_aux=getBloqEXT(sb,nomDisco,inod.apt_dir[0]);
+                if(strcmp(bloq_aux.nombre,nuevo)==0){ //carpeta ya existe
+                    exist=1;
+                    bloq.llave=-1;
+                    break;
+                }
                 i++;
             }
         }
     }else{
-        bloq.llave=-1;
+        bloq.llave=-1; //ruta no encontrada desde la raiz
     }
     return bloq;
 }
+
+/*digraph structs {
+    node [shape=record];rankdir=LR;
+    struct1 [label="<f0> 1|<f1> root|<f2> home|<f3> contenido|<4> 0|<5>1"];
+}*/
 
 void directorioEXT3(infoPart particion,char nomDisco[]){
     char nomDir[16],path[150];
@@ -657,8 +686,8 @@ void directorioEXT3(infoPart particion,char nomDisco[]){
             l=malloc(sizeof(Lista));
             divPath(l,path);
             temp=l->primero;
-            encontrado=getDirEXT(sb,nomDisco,temp,0); //pos actual 
-            if(strcmp(encontrado.nombre,l->ultimo->nombre)==0 && strcmp(nomDir,l->ultimo->nombre)!=0){
+            encontrado=getDirEXT(sb,nomDisco,temp,0,nomDir); //pos actual 
+            if(encontrado.llave!=-1){
                 i=aptVacio(encontrado);
                 if(i!=-1){
                     time_t tiempo = time(0);
